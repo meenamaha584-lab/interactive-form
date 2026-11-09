@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Document</title>
+    <style>
+        body{
+            background-image: url(https://cdn.pixabay.com/photo/2023/07/22/14/15/ai-generated-8143520_1280.png);
+            background-repeat:no-repeat;
+            background-size: cover;
+        }
+        div{
+            box-shadow: 10px 10px 20px rgb(16, 95, 126) ;
+            color: bisque;
+
+           
+            width: 40%;
+           
+            font-size: xx-large;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+    
+            border-radius: 50px;
+            font-weight: bolder;
+            margin-left: 30px;
+            transition: all 0.5s;
+        }
+        input{
+            width: 250px;
+            height: 20px;
+            border: 3px solid black;
+            border-radius: 30px ;
+        }
+        input::placeholder{
+            font-size: larger;
+            color: black;
+            padding-left: 30px;
+        }
+        button{
+            width: 130px;
+            height: 50px;
+            background-color: white;
+            color:black;
+            border: 3px solid white;
+            border-radius: 30px;
+            font-size: large;
+        }
+        td{
+            padding-bottom: 15px;
+        }
+        div:hover{
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Login here</h1>
+    <form action="">
+        <table>
+            <tr>
+                <td><label for="Maha">Name:</label></td>
+                <td><input type="text" id="Maha" placeholder="Enter Your Name"></td>
+            </tr>
+            <tr>
+                <td><label for="k">Roll.no:</label></td>
+                <td><input type="number" id="k" placeholder="Enter Your roll number"></td>
+            </tr>
+            <tr>
+                <td> <label for="v">E-mail:</label></td>
+                <td><input type="email" name="" id="v" placeholder="Enter Your Mail"></td>
+            </tr>
+            <tr>
+                <td><label for="k">DOB:</label></td>
+                <td><input type="date" id="v" placeholder="Enter your DOB"></td>
+            </tr>
+
+            <tr>
+                <td><label for="hj">password:</label></td>
+                <td><input type="password" id="hj" placeholder="Enter Your password"></td>
+            </tr>
+            <tr>
+                <td><button>Login</button></td>
+            </tr>
+        </table> 
+    </form>
+    </div>
+
+    
+</body>
+</html>

@@ -1,0 +1,252 @@
+import React, { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import * as THREE from "three";
+
+gsap.registerPlugin(ScrollTrigger);
+
+export default function PortfolioApp() {
+  const navRef = useRef(null);
+  const heroRef = useRef(null);
+  const projectsRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [webglOk, setWebglOk] = useState(true);
+
+  useEffect(() => {
+    gsap.from(navRef.current, { y: -28, opacity: 0, duration: 0.6 });
+    const heroCopy = heroRef.current?.querySelector(".hero-copy");
+    if (heroCopy) gsap.from(heroCopy, { y: 30, opacity: 0, duration: 0.9, ease: "power3.out" });
+    const cards = projectsRef.current?.querySelectorAll(".project-card") || [];
+    gsap.from(cards, {
+      scrollTrigger: { trigger: projectsRef.current, start: "top 85%" },
+      y: 30,
+      opacity: 0,
+      stagger: 0.12,
+      duration: 0.7,
+      ease: "power2.out",
+    });
+    gsap.to(heroRef.current?.querySelector(".hero-title"), {
+      scrollTrigger: { scrub: 0.6, start: "top top", end: "bottom top" },
+      y: -40,
+      ease: "none",
+    });
+    return () => ScrollTrigger.getAll().forEach((t) => t.kill());
+  }, []);
+
+  useEffect(() => {
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return setWebglOk(false);
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
+      camera.position.set(0, 0, 6);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+      dir.position.set(5, 5, 5);
+      scene.add(dir);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+      const geom = new THREE.IcosahedronGeometry(1.6, 2);
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xa7f3d0,
+        roughness: 0.5,
+        metalness: 0.05,
+        flatShading: true,
+        transparent: true,
+        opacity: 0.95,
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      scene.add(mesh);
+      const particleCount = 400;
+      const positions = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i++) {
+        positions[i * 3 + 0] = (Math.random() - 0.5) * 14;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 8;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 8;
+      }
+      const particlesGeom = new THREE.BufferGeometry();
+      particlesGeom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const particlesMat = new THREE.PointsMaterial({ size: 0.035, transparent: true, opacity: 0.9 });
+      const particles = new THREE.Points(particlesGeom, particlesMat);
+      scene.add(particles);
+      const clock = new THREE.Clock();
+      function resize() {
+        const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+        const h = Math.max(320, window.innerHeight * 0.45);
+        if (canvas.width !== w || canvas.height !== h) {
+          renderer.setSize(w, h, false);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        }
+      }
+      function animate() {
+        const t = clock.getElapsedTime();
+        mesh.rotation.y += 0.0028;
+        mesh.rotation.x += 0.0014;
+        const pos = geom.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const ox = pos.getX(i);
+          const oy = pos.getY(i);
+          const oz = pos.getZ(i);
+          pos.setXYZ(i, ox + Math.sin(t + i) * 0.0009, oy + Math.cos(t * 1.1 + i) * 0.0009, oz + Math.sin(t * 0.9 + i * 0.7) * 0.0009);
+        }
+        pos.needsUpdate = true;
+        geom.computeVertexNormals();
+        particles.rotation.y = t * 0.04;
+        resize();
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      animate();
+      setWebglOk(true);
+      window.addEventListener("resize", resize);
+      return () => {
+        window.removeEventListener("resize", resize);
+        renderer.dispose();
+        geom.dispose && geom.dispose();
+        particlesGeom.dispose && particlesGeom.dispose();
+      };
+    } catch (e) {
+      setWebglOk(false);
+    }
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 text-slate-800 antialiased">
+      <nav ref={navRef} className="fixed w-full top-0 left-0 z-40 backdrop-blur-sm bg-white/60">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="text-lg font-semibold">R. Mahalakshmi</div>
+          <div className="hidden md:flex gap-6 text-sm">
+            <a href="#about" className="hover:underline">About</a>
+            <a href="#projects" className="hover:underline">Projects</a>
+            <a href="#contact" className="hover:underline">Contact</a>
+          </div>
+          <div className="md:hidden" />
+        </div>
+      </nav>
+
+      <header ref={heroRef} className="relative overflow-hidden pt-20">
+        <div className="absolute inset-0 pointer-events-none">
+          {webglOk ? (
+            <canvas ref={canvasRef} className="w-full h-[55vh] block" />
+          ) : (
+            <div className="w-full h-[55vh] bg-gradient-to-br from-emerald-100 to-sky-100" />
+          )}
+        </div>
+
+        <div className="relative max-w-6xl mx-auto px-6 py-24 flex items-center gap-8">
+          <div className="hero-copy max-w-2xl">
+            <p className="text-sm uppercase tracking-wide text-slate-600 mb-2">Future Innovator</p>
+            <h1 className="hero-title text-3xl md:text-5xl font-extrabold leading-tight mb-4">I build calm and interactive web experiences.</h1>
+            <p className="text-slate-700 mb-6">2nd year CSE student learning Python and Full Stack Development. I enjoy crafting subtle animations and clean UI that feel friendly and accessible.</p>
+            <div className="flex gap-3">
+              <a href="#projects" className="inline-block bg-emerald-600 text-white px-5 py-3 rounded-full shadow hover:scale-105 transform transition">View Work</a>
+              <a href="#contact" className="inline-block border border-slate-300 px-5 py-3 rounded-full">Contact</a>
+            </div>
+          </div>
+
+          <div className="ml-auto hidden lg:block w-72 h-72 rounded-2xl bg-white/70 border p-4 shadow-lg">
+            <div className="w-full h-full rounded-xl bg-gradient-to-tr from-emerald-50 to-sky-50 flex items-center justify-center">Profile</div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-16">
+        <section id="about" className="mb-20 grid md:grid-cols-3 gap-8 items-center">
+          <div className="md:col-span-2">
+            <h2 className="text-2xl font-bold mb-3">About</h2>
+            <p className="text-slate-700 mb-4">Hi — I'm R. Mahalakshmi, a 2nd year CSE student and a future innovator. Currently learning Python and Full Stack Development, I enjoy designing interactive, calm, and accessible interfaces.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              {['HTML', 'CSS', 'Python', 'Full-stack basics'].map((s) => (
+                <div key={s} className="p-3 rounded-xl bg-white shadow-sm text-center text-sm">{s}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:col-span-1">
+            <div className="p-6 rounded-2xl bg-white shadow">
+              <h3 className="font-semibold mb-2">Contact</h3>
+              <p className="text-sm text-slate-700">meenamaha786@gmail.com</p>
+              <a href="#contact" className="mt-4 inline-block text-sm underline">Send a message</a>
+            </div>
+          </div>
+        </section>
+
+        <section id="projects" ref={projectsRef} className="mb-20">
+          <h2 className="text-2xl font-bold mb-6">Selected Projects</h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <article className="project-card bg-white rounded-2xl p-4 shadow hover:scale-[1.02] transform transition">
+              <div className="h-40 rounded-lg bg-gradient-to-br from-emerald-50 to-sky-50 mb-3 flex items-center justify-center">
+                <div className="w-48 p-3 rounded-2xl bg-[url('https://cdn.pixabay.com/photo/2023/07/22/14/15/ai-generated-8143520_1280.png')] bg-cover bg-center shadow-inner flex flex-col items-center justify-center">
+                  <h4 className="text-lg font-semibold text-white drop-shadow">Login here</h4>
+                </div>
+              </div>
+              <h3 className="font-semibold text-lg">Interactive Login Page</h3>
+              <p className="text-sm text-slate-600 mt-2">A friendly login UI with smooth hover interactions and rounded controls — inspired by a custom HTML design.</p>
+              <div className="mt-4 flex gap-2">
+                <a className="px-3 py-2 rounded-full border text-sm" href="44965cf9-6a32-4a1c-8d8f-1d609990fd65.HTML" target="_blank" rel="noreferrer">View</a>
+                <a className="px-3 py-2 rounded-full border text-sm" href="#" onClick={(e) => e.preventDefault()}>Code</a>
+              </div>
+            </article>
+
+            <article className="project-card bg-white rounded-2xl p-4 shadow hover:scale-[1.02] transform transition">
+              <div className="h-36 rounded-lg bg-gradient-to-br from-emerald-50 to-sky-50 mb-3 flex items-center justify-center">Preview 2</div>
+              <h3 className="font-semibold text-lg">Project Title 2</h3>
+              <p className="text-sm text-slate-600 mt-2">Short description highlighting animation or technical detail.</p>
+              <div className="mt-4 flex gap-2">
+                <a className="px-3 py-2 rounded-full border text-sm" href="#" onClick={(e) => e.preventDefault()}>Live</a>
+                <a className="px-3 py-2 rounded-full border text-sm" href="#" onClick={(e) => e.preventDefault()}>Code</a>
+              </div>
+            </article>
+
+            <article className="project-card bg-white rounded-2xl p-4 shadow hover:scale-[1.02] transform transition">
+              <div className="h-36 rounded-lg bg-gradient-to-br from-emerald-50 to-sky-50 mb-3 flex items-center justify-center">Preview 3</div>
+              <h3 className="font-semibold text-lg">Project Title 3</h3>
+              <p className="text-sm text-slate-600 mt-2">Short description highlighting animation or technical detail.</p>
+              <div className="mt-4 flex gap-2">
+                <a className="px-3 py-2 rounded-full border text-sm" href="#" onClick={(e) => e.preventDefault()}>Live</a>
+                <a className="px-3 py-2 rounded-full border text-sm" href="#" onClick={(e) => e.preventDefault()}>Code</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="certificates" className="mb-20">
+          <h2 className="text-2xl font-bold mb-6">Certificates</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="card bg-white rounded-2xl p-6 shadow text-center">
+              <h3 className="font-semibold mb-2">HP AI Certificate</h3>
+              <p className="text-sm text-slate-600 mb-4">Introduction To Internet Of Things — Score shown on certificate.</p>
+              <a className="inline-block bg-emerald-600 text-white px-5 py-3 rounded-full shadow hover:scale-105 transform transition" href="f0371452-d938-4cc2-82a8-cf3f58b76fed.pdf" target="_blank" rel="noreferrer">View</a>
+              <a className="inline-block border ml-3 border-slate-300 px-5 py-3 rounded-full" href="f0371452-d938-4cc2-82a8-cf3f58b76fed.pdf" download>Download</a>
+            </div>
+
+            <div className="card bg-white rounded-2xl p-6 shadow text-center">
+              <h3 className="font-semibold mb-2">NPTEL IoT Certificate</h3>
+              <p className="text-sm text-slate-600 mb-4">12 week course — NPTEL online certification.</p>
+              <a className="inline-block bg-emerald-600 text-white px-5 py-3 rounded-full shadow hover:scale-105 transform transition" href="78628cc5-6502-4180-a3d0-a9d87cb518f2.pdf" target="_blank" rel="noreferrer">View</a>
+              <a className="inline-block border ml-3 border-slate-300 px-5 py-3 rounded-full" href="78628cc5-6502-4180-a3d0-a9d87cb518f2.pdf" download>Download</a>
+            </div>
+          </div>
+        </section>
+
+        <section id="contact" className="mb-20">
+          <h2 className="text-2xl font-bold mb-4">Contact</h2>
+          <div className="bg-white p-6 rounded-2xl shadow max-w-2xl">
+            <p className="mb-4 text-slate-700">Want to collaborate or ask a question? Email me at <strong>meenamaha786@gmail.com</strong>.</p>
+            <form onSubmit={(e) => e.preventDefault()} className="grid gap-3">
+              <input placeholder="Your name" className="p-3 border rounded-lg" />
+              <input placeholder="Your email" className="p-3 border rounded-lg" />
+              <textarea placeholder="Message" className="p-3 border rounded-lg" rows={4} />
+              <button className="inline-block bg-emerald-600 text-white px-4 py-2 rounded-lg self-start">Send message</button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-8 border-t">
+        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-slate-600">© {new Date().getFullYear()} R. Mahalakshmi — Future Innovator</div>
+      </footer>
+    </div>
+  );
+  }
